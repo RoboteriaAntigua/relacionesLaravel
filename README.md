@@ -1,66 +1,91 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Relaciones en laravel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
 
-## About Laravel
+# COnceptos
+    ENtidades fuertes: Su existencia no depende de la existencia de otra tabla. Una tabla users suele ser un ejemplo.
+    Entidades debiles: No pueden existir sin otras tablas. Un ejemplo seria la tabla perfiles, que depende de la tabla users.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+# Relacion 1 a 1
+    Entre la tabla profiles y la tabla users.
+    php artisan make:migration create_profiles_table
+    php artisan make:model Profile
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+    # $table->id()  => crea un Entero grande sin signo
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+    # La clave foranea de profiles
+        $table->unsignedBigInteger('user_id')->unique()->nullable();
+        $table->foreign('user_id')->references('id')
+            ->on('users')
+            ->onDelete('set null')
+            ->onUpdate('cascade');
 
-## Learning Laravel
+        Explicacion:
+            El campo user_id debe ser del mismo tipo que el campo id de la tabla users.
+            El campo user_id es unique() para que se mantenga la relacion 1 a 1, sino seria 1 a muchos.
+            El campo user_id es nullable() para poder ser clave foranea con onDelete('set null')
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+    # Agregar metodo a la entidad fuerte (users)
+        $this->hasOne()
+        Al modelo User le agregamos un metodo para recuperar el profile de cada user.
+         public function profile(){
+            return $this->hasOne(Profile::class);       //Tambien podes pasar asi el Profile::class -> 'App\Models\Profile'
+            }
+        Si el nombre de la llave foranea de profiles no es user_id :
+            return $this->hasOne(Profile::class,'nombre_llave_foranea', 'llave_primaria_profiles');
+        
+    # Agregar metodo a la entidad debil
+        $this->belongsTo
+        Al modelo Profile le agregamos un metodo para recuperar la info del user
+        public function user(){
+        // return User::find($this->user_id); o mejor
+        return $this->belongsTo('App\Models\User');
+    }
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+    #Resumen metodos 1 a 1
+        Entidad fuerte => $this->hasOne( 'modelo debil' )
+        Entidad debil => $this->belongsTo( 'modelo fuerte' )
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+    # Falta agregar factorys y seeders o campos manualmente y probar con tinker
 
-## Laravel Sponsors
+# Relacion 1 a muchos
+    Relacion fuerte Users con relacion debil Posts con relacion Fuerte Categoriales
+    users -> posts <-Categorias
+    Un usuario puede tener muchos posts.
+    Una categoria abarca a muchos posts.
+    Cada post tiene solo 1 usuario y solo 1 categoria.
+    # categorias 
+        php artisan make:model Categoria -m     (migracion tambien)
+    
+    #Migraciones posts
+        //Relacion con users
+         $table->unsignedBigInteger('user_id')->nullable();
+         $table->foreign('user_id')->references('id')->on('users')->onDelete('set null')->onUpdate('cascade');
+            
+            
+        //Relacion con categorias
+        $table->unsignedBigInteger('categoria_id')->nullable();
+        $table->foreign('categoria_id')->references('id')->on('categorias')->onDelete('set null')->onUpdate('cascade');
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+    # Metodos a los modelos
+        User hasMany posts
+        Post belongsTo User
+        Post belongsTo categorias
+        Categoria hasMany posts
 
-### Premium Partners
+        # modelo User
+            public function posts(){
+                return $this->hasMany('App\Models\Post');
+            }
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+        # modelo Post
+            public function user(){
+                return $this->belongsTo('App\Models\User');
+            }
+            public function categoria(){
+                return $this->belongsTo('App\Models\Categoria');
+            }
 
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+        # Modelo Categoria
+            public function posts(){
+                return $this->hasMany('App\Models\Post');
+            }
