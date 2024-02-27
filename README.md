@@ -41,11 +41,11 @@
         return $this->belongsTo('App\Models\User');
     }
 
-    #Resumen metodos 1 a 1
+# Resumen metodos 1 a 1
         Entidad fuerte => $this->hasOne( 'modelo debil' )
         Entidad debil => $this->belongsTo( 'modelo fuerte' )
 
-    # Falta agregar factorys y seeders o campos manualmente y probar con tinker
+
 
 # Relacion 1 a muchos
     Relacion fuerte Users con relacion debil Posts con relacion Fuerte Categoriales
@@ -76,7 +76,7 @@
         Roles belongsToMany users   //muchos a muchos
         Users belongsToMany Roles   //Muchos a muchos
 
-        
+
         //Ejemplo:
             public function user(){
                 return $this->belongsTo('App\Models\User');
@@ -149,7 +149,19 @@
     # Ver los usuarios de un role:
         $role->users;
 
- # Resumen
+# Quitar una relacion
+    $user = User::find(44);
+    $user->roles()->dettach(1);    //Usuario id:44 ya no tiene el rol de id:1
+
+# Muchos a muchos, attach varias relaciones
+    $user = User::find(4);                  //Al usuario id: 4 le asignams los roles de id: 2 y 3 y 56
+    $user->roles()->attach([2,3,56]);    
+# sync
+# Muchos a muchos, borrar todas las relaciones de un usuario y agregar nuevas en un solo comando   
+    $user = User::find(1);
+    $user->roles()->sync([1,2]);        //Borra las relaciones de tabla pivote (roles del usuario 1), y le agrega roles 1 y 2
+ 
+# Resumen
     # 1 a 1
         $this->hasOne()     => Entidad fuerte
         $this->belongsTo()  => Entidad debil
