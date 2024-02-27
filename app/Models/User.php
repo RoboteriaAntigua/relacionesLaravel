@@ -43,11 +43,21 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    //user 1 a profile 1
+    //Un usuario tiene un profile (hasOne). User entidad fuerte
     public function profile(){
         return $this->hasOne('App\Models\Profile');
     }
 
+    //users 1 a posts muchos
     public function posts(){
         return $this->hasMany('App\Models\Post');
     }
+
+    //Muchos a muchos
+    //Un usuario tiene muchos roles
+    public function roles(){
+        return $this->belongsToMany('App\Models\Role');
+    }
+
 }

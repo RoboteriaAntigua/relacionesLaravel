@@ -8,8 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Profile extends Model
 {
     use HasFactory;
+
+    //Un profile pertenece a un user (belongsTo)
+    //Entidad fuerte user
     public function user(){
-        // return User::find($this->user_id); o mas eficiente
         return $this->belongsTo('App\Models\User');
     }
 }

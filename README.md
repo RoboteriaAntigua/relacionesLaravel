@@ -66,18 +66,18 @@
         $table->unsignedBigInteger('categoria_id')->nullable();
         $table->foreign('categoria_id')->references('id')->on('categorias')->onDelete('set null')->onUpdate('cascade');
 
-    # Metodos a los modelos
-        User hasMany posts
-        Post belongsTo User
-        Post belongsTo categorias
-        Categoria hasMany posts
+# Metodos a los modelos (ver modelos)
+        User hasMany posts  //1 a 1 
+        Post belongsTo User //1 a 1
 
-        # modelo User
-            public function posts(){
-                return $this->hasMany('App\Models\Post');
-            }
+        Post belongsTo categoria   //muchos a 1
+        Categoria hasMany posts     //1 a muchos
 
-        # modelo Post
+        Roles belongsToMany users   //muchos a muchos
+        Users belongsToMany Roles   //Muchos a muchos
+
+        
+        //Ejemplo:
             public function user(){
                 return $this->belongsTo('App\Models\User');
             }
@@ -85,7 +85,79 @@
                 return $this->belongsTo('App\Models\Categoria');
             }
 
-        # Modelo Categoria
-            public function posts(){
-                return $this->hasMany('App\Models\Post');
-            }
+
+# Seeders para probar
+    Como hay relaciones, se puede pero es mas complejo crear factorys, entonces voy a crear varios seeders
+    para cada tabla:
+        php artisan make:seeder ProfileSeeder
+        php artisan make:seeder UserSeeder
+        php artisan make:seeder CategoriaSeeder
+        php artisan make:seeder PostSeeder
+    DatabaseSeeder los llamo asi:
+        $this->call([
+            UserSeeder::class,
+            PostSeeder::class,
+            ProfileSeeder::class,
+            CategoriaSeeder::class,
+        ]);
+    En lo individual solamente ingreso datos con insert:
+     DB::table('categorias')->insert([
+            'name' => Str::random(10)
+        ]);
+    DB::table('users')->insert([
+            'name'=>fake()->name(),
+            'email'=>fake()->email(),
+            'password'=>Str::random(8)
+        ]);
+
+# Correr los seeders
+    php artisan db:seed 
+    Esto tira error porque vamos a intentar asignar claves foraneas de ids que no existen, entonces primero hay que semillar
+    las entidades fuertes: users y categorias
+        php artisan db:seed --class=UserSeeder  (varias veces)
+        php artisan db:seed --class=CategoriaSeeder
+    Luego:
+        php artisan db:seed     (Puede dar error porque se llenan claves foraneas al azar, repetir varias veces)
+
+# Como recuperar los posts de una categoria:
+    use App\Models\Categoria;
+    $cate1 =  Categoria::where('id',1)->first();
+    $cate1->posts;  //No ->posts()
+
+# Como recuperar los posts que pertenecen a un user:
+    use App\Models\User;
+    $user = User::where('id',1)->first();
+    $user->posts;   //Es un objeto // No ->posts()
+
+# Muchos a Muchos
+    Roles a Users. Los usuarios pueden tener muchos roles y los roles muchos usuarios.
+        php artisan make:model Role -ms
+    Tabla pivote: role_user
+        php artisan make:migration create_role_user_table
+
+# Guardar info en la tabla pivote
+    $user = User::find(1);
+    $user->roles()->attach(2);  //Al usuario de id 1 le cargo el rol de id 2
+    $user->roles()->attach(3);  //al user de id:1 le cargo el role de id:3
+
+    $role = Role::find(1);
+    $role->users()->attach(4);  //Al role de id:1 le cargo el usuario de id:4
+    $role->users()->attach(2);  //Al role de id:1 le cargo el usuario de id:2
+
+    # Ver los roles de un usuario
+        $user->roles;
+    # Ver los usuarios de un role:
+        $role->users;
+
+ # Resumen
+    # 1 a 1
+        $this->hasOne()     => Entidad fuerte
+        $this->belongsTo()  => Entidad debil
+
+    # 1 a muchos
+    $this->hasMany()    => 1 a muchos
+    $this->belongsTo()  => muchos a uno
+
+    # Muchos a Muchos
+    $this->belongsToMany()
+    $this->belongsToMany()
